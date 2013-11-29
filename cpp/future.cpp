@@ -49,7 +49,14 @@ auto operator<<(std::future<void> fut, const F& func) -> std::future<decltype(fu
 
 int main() {
 	// Prints the typed number + 2
-	std::async(println, "Please enter a number: ") << get_int << add_one << add_one << to_string << format_result << println << goodbye;
+	std::async(println, "Please enter a number: ") 
+		<< get_int 
+		<< add_one 
+		<< add_one 
+		<< to_string 
+		<< format_result 
+		<< println 
+		<< goodbye;
 	return 0;
 }
 
