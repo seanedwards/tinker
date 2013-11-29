@@ -30,20 +30,33 @@ int add_one(int x) {
 }
 
 int get_int() {
-	std::cin.exceptions (std::ios::failbit);   // throw on failbit set
 	int x;
+	std::cin.clear();
 	std::cin >> x;                             // sets failbit if invalid
+	std::cin.exceptions (std::ios::failbit);   // throw on failbit set
 	return x;
+}
+
+struct FutureGetter {};
+FutureGetter get;
+
+template<typename T>
+auto operator<<(std::future<T> fut, const FutureGetter&) -> decltype(fut.get()) {
+	return fut.get();
+}
+
+void operator<<(std::future<void>fut, const FutureGetter&) {
+	fut.get();
 }
 
 template<typename T, typename F>
 auto operator<<(std::future<T> fut, const F& func) -> std::future<decltype(func(fut.get()))> {
-	return std::async([func] (std::shared_future<T> fut) { return func(fut.get()); }, fut.share());
+	return std::async([func] (std::shared_future<T> fut) { fut.wait(); return func(fut.get()); }, fut.share());
 }
 
 template<typename F>
 auto operator<<(std::future<void> fut, const F& func) -> std::future<decltype(func())> {
-	return std::async([func] (std::shared_future<void> fut) { fut.get(); return func(); }, fut.share());
+	return std::async([func] (std::shared_future<void> fut) { fut.wait(); fut.get(); return func(); }, fut.share());
 }
 
 
@@ -56,7 +69,8 @@ int main() {
 		<< to_string 
 		<< format_result 
 		<< println 
-		<< goodbye;
+		<< goodbye
+		<< get;
 	return 0;
 }
 
