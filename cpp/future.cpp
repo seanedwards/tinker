@@ -11,8 +11,8 @@ int add_one(int x) {
 }
 
 template<typename T, typename F>
-auto operator<<(std::future<T> fut, F func) -> decltype(std::async(func, fut.get())) {
-	return std::async(func, fut.get());
+auto operator<<(std::future<T> fut, F func) -> std::future<decltype(func(fut.get()))> {
+	return std::async([func] (std::shared_future<T> fut) { return func(fut.get()); }, fut.share());
 }
 
 int main() {
