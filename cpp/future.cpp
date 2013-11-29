@@ -29,6 +29,13 @@ int add_one(int x) {
 	return x + 1;
 }
 
+int get_int() {
+	std::cin.exceptions (std::ios::failbit);   // throw on failbit set
+	int x;
+	std::cin >> x;                             // sets failbit if invalid
+	return x;
+}
+
 template<typename T, typename F>
 auto operator<<(std::future<T> fut, const F& func) -> std::future<decltype(func(fut.get()))> {
 	return std::async([func] (std::shared_future<T> fut) { return func(fut.get()); }, fut.share());
@@ -41,7 +48,8 @@ auto operator<<(std::future<void> fut, const F& func) -> std::future<decltype(fu
 
 
 int main() {
-	std::async(add_one, 1) << add_one << add_one << to_string << format_result << println << goodbye;
+	// Prints the typed number + 2
+	std::async(println, "Please enter a number: ") << get_int << add_one << add_one << to_string << format_result << println << goodbye;
 	return 0;
 }
 
