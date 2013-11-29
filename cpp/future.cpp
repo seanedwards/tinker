@@ -7,6 +7,14 @@
  * Compile with: clang++ -std=c++11 -stdlib=libc++ future.cpp
  */
 
+void println(const std::string& str) {
+	std::cout << str << std::endl;
+}
+
+void goodbye() {
+	println("Goodbye.");
+}
+
 std::string format_result(const std::string& str) {
 	return "Result is: " + str;
 }
@@ -26,8 +34,14 @@ auto operator<<(std::future<T> fut, const F& func) -> std::future<decltype(func(
 	return std::async([func] (std::shared_future<T> fut) { return func(fut.get()); }, fut.share());
 }
 
+template<typename F>
+auto operator<<(std::future<void> fut, const F& func) -> std::future<decltype(func())> {
+	return std::async([func] (std::shared_future<void> fut) { fut.get(); return func(); }, fut.share());
+}
+
+
 int main() {
-	std::cout << (std::async(add_one, 1) << add_one << add_one << to_string << format_result).get() << std::endl;
+	std::async(add_one, 1) << add_one << add_one << to_string << format_result << println << goodbye;
 	return 0;
 }
 
