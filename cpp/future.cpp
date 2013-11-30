@@ -146,6 +146,7 @@ int main() {
 	auto t2 = high_resolution_clock::now();
 	std::cout << "Finished main() in " << duration_cast<duration<double>>(t2 - t1).count() << " seconds." << std::endl;
 
+	// Block main() on the result, otherwise the process will just terminate.
 	result.get();
 
 	return 0;
