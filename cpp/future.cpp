@@ -5,6 +5,7 @@
 #include <chrono>
 #include <thread>
 #include <ctime>
+#include <memory>
 
 /* An idea for continuing computation with C++11 futures.
  * Compile with: clang++ -std=c++11 -stdlib=libc++ future.cpp
@@ -50,11 +51,23 @@ struct FutureBackgrounder {};
 FutureBackgrounder background;
 
 template<typename T>
-std::thread operator<<(std::future<T> fut, const FutureBackgrounder&) {
+std::future<T> operator<<(std::future<T> fut, const FutureBackgrounder&) {
 	// Spawns a thread that will execute the previous future(s).
-	return std::thread([] (std::shared_future<T> fut) {
+	// Can't use std::async here, since std::future's destructure will block.
+	std::shared_ptr<std::promise<T>> promise(new std::promise<T>()) ;
+	std::thread([promise] (std::shared_future<T> fut) {
+		promise->set_value(fut.get());
+	}, fut.share()).detach();
+	return promise->get_future();
+}
+
+std::future<void> operator<<(std::future<void> fut, const FutureBackgrounder&) {
+	std::shared_ptr<std::promise<void>> promise(new std::promise<void>()) ;
+	std::thread([promise] (std::shared_future<void> fut) {
 		fut.get();
-	}, fut.share());
+		promise->set_value();
+	}, fut.share()).detach();
+	return promise->get_future();
 }
 
 
@@ -116,7 +129,7 @@ int main() {
 
 	std::cout << "Enter a number: " << std::flush;
 	// Prints the typed number + 2
-	auto thread = std::async(std::launch::async, get_int) 
+	std::future<void> result = std::async(std::launch::async, get_int) 
 		// When that's done, add two to the result:
 		<< std::bind(add, std::placeholders::_1, 2)
 		// When that's done, convert it to a string:
@@ -130,12 +143,10 @@ int main() {
 		// And block the whole thing on a background thread.
 		<< background;
 
-	// Unfortunately it seems this does not actually run asynchronously. See also: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3451.pdf
-
 	auto t2 = high_resolution_clock::now();
 	std::cout << "Finished main() in " << duration_cast<duration<double>>(t2 - t1).count() << " seconds." << std::endl;
 
-	thread.join();
+	result.get();
 
 	return 0;
 }
