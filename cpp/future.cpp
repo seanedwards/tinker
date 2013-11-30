@@ -37,6 +37,11 @@ int get_int() {
 	return x;
 }
 
+std::future<int> prompt_int(const std::string& prompt) {
+	std::cout << prompt << ": " << std::flush;
+	return std::async(get_int);
+}
+
 struct FutureGetter {};
 FutureGetter get;
 
@@ -62,8 +67,7 @@ auto operator<<(std::future<void> fut, const F& func) -> std::future<decltype(fu
 
 int main() {
 	// Prints the typed number + 2
-	std::async(println, "Please enter a number: ") 
-		<< get_int 
+	prompt_int("Enter a number")
 		<< add_one 
 		<< add_one 
 		<< to_string 
