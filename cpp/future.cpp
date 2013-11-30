@@ -117,7 +117,7 @@ int main() {
 
 	std::cout << "Enter a number: " << std::flush;
 	// Prints the typed number + 2
-	auto thread = std::async(get_int) 
+	auto thread = std::async(std::launch::async, get_int) 
 		// When that's done, add two to the result:
 		<< std::bind(add, std::placeholders::_1, 2)
 		// When that's done, convert it to a string:
