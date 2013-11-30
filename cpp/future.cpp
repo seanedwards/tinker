@@ -56,12 +56,12 @@ void operator<<(std::future<void>fut, const FutureGetter&) {
 
 template<typename T, typename F>
 auto operator<<(std::future<T> fut, const F& func) -> std::future<decltype(func(fut.get()))> {
-	return std::async([func] (std::shared_future<T> fut) { fut.wait(); return func(fut.get()); }, fut.share());
+	return std::async(std::launch::deferred, [func] (std::shared_future<T> fut) { fut.wait(); return func(fut.get()); }, fut.share());
 }
 
 template<typename F>
 auto operator<<(std::future<void> fut, const F& func) -> std::future<decltype(func())> {
-	return std::async([func] (std::shared_future<void> fut) { fut.wait(); fut.get(); return func(); }, fut.share());
+	return std::async(std::launch::deferred, [func] (std::shared_future<void> fut) { fut.wait(); fut.get(); return func(); }, fut.share());
 }
 
 
