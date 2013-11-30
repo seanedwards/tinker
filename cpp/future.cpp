@@ -17,13 +17,20 @@
 template<typename T, typename F>
 auto operator<<(std::future<T> fut, const F& func) -> std::future<decltype(func(fut.get()))> {
 	// Return a new future (deferred launch, similar to buffering on cout, avoids extraneous threads)
-	return std::async(std::launch::deferred, [func] (std::future<T> fut) { return func(fut.get()); }, std::move(fut));
+	return std::async(std::launch::deferred,
+		[func] (std::future<T> fut) {
+			return func(fut.get());
+		}, std::move(fut));
 }
 
 template<typename F>
 auto operator<<(std::future<void> fut, const F& func) -> std::future<decltype(func())> {
 	// Specialization for void futures.
-	return std::async(std::launch::deferred, [func] (std::future<void> fut) { fut.get(); return func(); }, std::move(fut));
+	return std::async(std::launch::deferred,
+		[func] (std::future<void> fut) {
+			fut.get();
+			return func();
+		}, std::move(fut));
 }
 
 
