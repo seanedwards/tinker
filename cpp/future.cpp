@@ -17,13 +17,13 @@
 template<typename T, typename F>
 auto operator<<(std::future<T> fut, const F& func) -> std::future<decltype(func(fut.get()))> {
 	// Return a new future (deferred launch, similar to buffering on cout, avoids extraneous threads)
-	return std::async(std::launch::deferred, [func] (std::shared_future<T> fut) { return func(fut.get()); }, fut.share());
+	return std::async(std::launch::deferred, [func] (std::future<T> fut) { return func(fut.get()); }, move(fut));
 }
 
 template<typename F>
 auto operator<<(std::future<void> fut, const F& func) -> std::future<decltype(func())> {
 	// Specialization for void futures.
-	return std::async(std::launch::deferred, [func] (std::shared_future<void> fut) { fut.get(); return func(); }, fut.share());
+	return std::async(std::launch::deferred, [func] (std::future<void> fut) { fut.get(); return func(); }, move(fut));
 }
 
 
@@ -55,18 +55,18 @@ std::future<T> operator<<(std::future<T> fut, const FutureBackgrounder&) {
 	// Spawns a thread that will execute the previous future(s).
 	// Can't use std::async here, since std::future's destructure will block.
 	std::shared_ptr<std::promise<T>> promise(new std::promise<T>()) ;
-	std::thread([promise] (std::shared_future<T> fut) {
+	std::thread([promise] (std::future<T> fut) {
 		promise->set_value(fut.get());
-	}, fut.share()).detach();
+	}, move(fut)).detach();
 	return promise->get_future();
 }
 
 std::future<void> operator<<(std::future<void> fut, const FutureBackgrounder&) {
 	std::shared_ptr<std::promise<void>> promise(new std::promise<void>()) ;
-	std::thread([promise] (std::shared_future<void> fut) {
+	std::thread([promise] (std::future<void> fut) {
 		fut.get();
 		promise->set_value();
-	}, fut.share()).detach();
+	}, move(fut)).detach();
 	return promise->get_future();
 }
 
