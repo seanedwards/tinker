@@ -17,13 +17,13 @@
 template<typename T, typename F>
 auto operator<<(std::future<T> fut, const F& func) -> std::future<decltype(func(fut.get()))> {
 	// Return a new future (deferred launch, similar to buffering on cout, avoids extraneous threads)
-	return std::async(std::launch::deferred, [func] (std::future<T> fut) { return func(fut.get()); }, move(fut));
+	return std::async(std::launch::deferred, [func] (std::future<T> fut) { return func(fut.get()); }, std::move(fut));
 }
 
 template<typename F>
 auto operator<<(std::future<void> fut, const F& func) -> std::future<decltype(func())> {
 	// Specialization for void futures.
-	return std::async(std::launch::deferred, [func] (std::future<void> fut) { fut.get(); return func(); }, move(fut));
+	return std::async(std::launch::deferred, [func] (std::future<void> fut) { fut.get(); return func(); }, std::move(fut));
 }
 
 
@@ -57,7 +57,7 @@ std::future<T> operator<<(std::future<T> fut, const FutureBackgrounder&) {
 	std::shared_ptr<std::promise<T>> promise(new std::promise<T>()) ;
 	std::thread([promise] (std::future<T> fut) {
 		promise->set_value(fut.get());
-	}, move(fut)).detach();
+	}, std::move(fut)).detach();
 	return promise->get_future();
 }
 
@@ -66,7 +66,7 @@ std::future<void> operator<<(std::future<void> fut, const FutureBackgrounder&) {
 	std::thread([promise] (std::future<void> fut) {
 		fut.get();
 		promise->set_value();
-	}, move(fut)).detach();
+	}, std::move(fut)).detach();
 	return promise->get_future();
 }
 
