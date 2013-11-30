@@ -50,10 +50,12 @@ struct FutureBackgrounder {};
 FutureBackgrounder background;
 
 template<typename T>
-std::future<T> operator<<(std::future<T> fut, const FutureBackgrounder&) {
+std::thread operator<<(std::future<T> fut, const FutureBackgrounder&) {
 	// Spawns a thread that will execute the previous future(s).
 	std::cout << "Launching asynchronously." << std::endl;
-	return std::async(std::launch::async, [] (std::shared_future<T> fut) { return fut.get(); }, fut.share());
+	return std::thread([] (std::shared_future<T> fut) {
+		fut.get();
+	}, fut.share());
 }
 
 
@@ -115,7 +117,7 @@ int main() {
 
 	std::cout << "Enter a number: " << std::flush;
 	// Prints the typed number + 2
-	std::async(get_int) 
+	auto thread = std::async(get_int) 
 		// When that's done, add two to the result:
 		<< std::bind(add, std::placeholders::_1, 2)
 		// When that's done, convert it to a string:
@@ -133,6 +135,8 @@ int main() {
 
 	auto t2 = high_resolution_clock::now();
 	std::cout << "Finished main() in " << duration_cast<duration<double>>(t2 - t1).count() << " seconds." << std::endl;
+
+	thread.join();
 
 	return 0;
 }
