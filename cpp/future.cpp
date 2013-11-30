@@ -52,7 +52,6 @@ FutureBackgrounder background;
 template<typename T>
 std::thread operator<<(std::future<T> fut, const FutureBackgrounder&) {
 	// Spawns a thread that will execute the previous future(s).
-	std::cout << "Launching asynchronously." << std::endl;
 	return std::thread([] (std::shared_future<T> fut) {
 		fut.get();
 	}, fut.share());
